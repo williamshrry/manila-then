@@ -3,84 +3,78 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Interactive Historical Map</title>
+<title>Interactive Photo Map</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background: #111;
-  }
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial;
+  background: #111;
+}
 
-  #map {
-    width: 100vw;
-    height: 100vh;
-  }
+#map {
+  width: 100vw;
+  height: 100vh;
+}
 
-  .legend {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0,0,0,0.75);
-    color: white;
-    padding: 12px;
-    border-radius: 10px;
-    z-index: 9999;
-    font-size: 13px;
-  }
+#coords {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 9999;
+  font-size: 13px;
+}
 
-  /* Coordinate box */
-  #coords {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(0,0,0,0.75);
-    color: white;
-    padding: 10px 12px;
-    border-radius: 10px;
-    z-index: 9999;
-    font-size: 13px;
-  }
+.legend {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 12px;
+  border-radius: 10px;
+  z-index: 9999;
+  font-size: 13px;
+}
 
-  /* Modal */
-  #imgModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.85);
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-  }
+#imgModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
 
-  #imgModal img {
-    max-width: 80%;
-    max-height: 80%;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  }
+#imgModal img {
+  max-width: 80%;
+  max-height: 80%;
+  border-radius: 10px;
+}
 </style>
 </head>
 
 <body>
 
 <div id="map"></div>
-
-<div class="legend">
-  <b>Controls</b><br>
-  • Scroll = Zoom<br>
-  • Drag = Pan<br>
-  • Click pins = Open image
-</div>
-
 <div id="coords">X: 0 | Y: 0</div>
 
-<!-- FULL SCREEN IMAGE MODAL -->
+<div class="legend">
+<b>Controls</b><br>
+Hover = cone view<br>
+Click = open photo
+</div>
+
 <div id="imgModal">
   <img id="modalImg">
 </div>
@@ -88,21 +82,17 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-// ---------------- MAP SETUP ----------------
+
+// ---------------- MAP ----------------
 const map = L.map('map', {
   crs: L.CRS.Simple,
   minZoom: -2,
   maxZoom: 4
 });
 
-let hoverCone = null;
-
 const bounds = [[0,0],[2400,1400]];
 
-// SOUTH (bottom)
 L.imageOverlay('./south.jpg', [[0,0],[1200,1400]]).addTo(map);
-
-// NORTH (top)
 L.imageOverlay('./north.jpg', [[1200,0],[2400,1400]]).addTo(map);
 
 map.fitBounds(bounds);
@@ -110,7 +100,7 @@ map.fitBounds(bounds);
 // ---------------- COORDINATES ----------------
 const coordBox = document.getElementById("coords");
 
-map.on('mousemove', function(e){
+map.on('mousemove', e => {
   coordBox.innerHTML =
     "X: " + Math.round(e.latlng.lng) +
     " | Y: " + Math.round(e.latlng.lat);
@@ -120,27 +110,49 @@ map.on('mousemove', function(e){
 const modal = document.getElementById("imgModal");
 const modalImg = document.getElementById("modalImg");
 
-function showCone(latlng) {
+function openImage(src){
+  modal.style.display = "flex";
+  modalImg.src = src;
+}
 
-  // remove old cone if exists
-  if (hoverCone) {
-    map.removeLayer(hoverCone);
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+// ---------------- DATA ----------------
+const photos = [
+  {
+    image: "images/250-solanost.jpg",
+    coords: [500, 700],
+    rotation: 45,
+    range: 300,
+    angle: 40
   }
+];
 
-  // cone size + direction
-  const angle = 5; // spread of flashlight
-  const distance = 5; // how far it reaches
+// ---------------- CONE SYSTEM ----------------
+let activeCone = null;
 
-  // fake direction (you can adjust per photo later)
+function showCone(latlng, rotation, range, angle) {
+
+  if (activeCone) map.removeLayer(activeCone);
+
+  const rad = rotation * Math.PI / 180;
+  const halfAngle = (angle / 2) * Math.PI / 180;
+
   const base = latlng;
-  const left = [latlng.lat + distance, latlng.lng - angle];
-  const right = [latlng.lat + distance, latlng.lng + angle];
 
-  hoverCone = L.polygon([
-    base,
-    left,
-    right
-  ], {
+  const left = [
+    latlng.lat + Math.cos(rad - halfAngle) * range,
+    latlng.lng + Math.sin(rad - halfAngle) * range
+  ];
+
+  const right = [
+    latlng.lat + Math.cos(rad + halfAngle) * range,
+    latlng.lng + Math.sin(rad + halfAngle) * range
+  ];
+
+  activeCone = L.polygon([base, left, right], {
     color: "yellow",
     fillColor: "yellow",
     fillOpacity: 0.2,
@@ -148,45 +160,39 @@ function showCone(latlng) {
   }).addTo(map);
 }
 
-function hideCone() {
-  if (hoverCone) {
-    map.removeLayer(hoverCone);
-    hoverCone = null;
+function hideCone(){
+  if (activeCone){
+    map.removeLayer(activeCone);
+    activeCone = null;
   }
 }
 
-function openImage(src){
-  modal.style.display = "flex";
-  modalImg.src = src;
-}
+// ---------------- GENERATE MARKERS ----------------
+photos.forEach(photo => {
 
-modal.addEventListener("click", function(){
-  modal.style.display = "none";
-  modalImg.src = "";
+  const marker = L.circleMarker(photo.coords, {
+    radius: 7,
+    color: "red",
+    fillColor: "red",
+    fillOpacity: 1
+  }).addTo(map);
+
+  marker.on('mouseover', (e) => {
+    showCone(
+      e.latlng,
+      photo.rotation,
+      photo.range,
+      photo.angle
+    );
+  });
+
+  marker.on('mouseout', hideCone);
+
+  marker.on('click', () => {
+    openImage(photo.image);
+  });
+
 });
-
-// ---------------- PINS ----------------
-
-// Pin 1
-const marker = L.circleMarker([500, 700], {
-  radius: 7,
-  color: "red",
-  fillColor: "red",
-  fillOpacity: 1
-}).addTo(map);
-
-marker.on('mouseover', function (e) {
-  showCone(e.latlng);
-});
-
-marker.on('mouseout', function () {
-  hideCone();
-});
-
-marker.on('click', function () {
-  openImage("images/250-solanost.jpg");
-});
-
 
 </script>
 
