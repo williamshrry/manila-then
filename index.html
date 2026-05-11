@@ -177,22 +177,6 @@
       </div>
     `);
 
-    // Example clickable marker #2
-    const marker2 = L.circleMarker([1374, 611], {
-      radius: 8,
-      color: '#ff4d4d',
-      fillColor: '#ff0000',
-      fillOpacity: 1,
-      weight: 2
-    }).addTo(map);
-
-    marker2.bindPopup(`
-      <div class="custom-popup">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Escolta_Street%2C_Manila%2C_c._1940.jpg/640px-Escolta_Street%2C_Manila%2C_c._1940.jpg">
-        <strong>Another Point of Interest</strong><br>
-        Add historical descriptions here.
-      </div>
-    `);
 
     // Optional coordinate debugging
     map.on('click', function(e) {
