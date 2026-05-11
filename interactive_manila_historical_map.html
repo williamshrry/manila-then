@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Manila Historical Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
+
+    .leaflet-container {
+      background: #1a1a1a;
+    }
+
+    .custom-popup {
+      text-align: center;
+    }
+
+    .custom-popup img {
+      width: 250px;
+      border-radius: 10px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .title-bar {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      letter-spacing: 1px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 14px;
+      border-radius: 12px;
+      width: 220px;
+      line-height: 1.5;
+      backdrop-filter: blur(10px);
+    }
+
+    .legend h3 {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .legend p {
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    .marker-label {
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      text-shadow: 0 0 6px black;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="title-bar">
+    Interactive Historical Map of Manila
+  </div>
+
+  <div id="map"></div>
+
+  <div class="legend">
+    <h3>Controls</h3>
+    <p>• Scroll to zoom in/out</p>
+    <p>• Drag to pan around the map</p>
+    <p>• Click the red markers to open image popups</p>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Create map using a simple coordinate system
+    const map = L.map('map', {
+      crs: L.CRS.Simple,
+      minZoom: -2,
+      maxZoom: 4,
+      zoomSnap: 0.1,
+    });
+
+    // Dimensions of combined map canvas
+    const imageWidth = 2800;
+    const imageHeight = 2400;
+
+    const bounds = [[0, 0], [imageHeight, imageWidth]];
+
+    // Add the NORTH map
+    L.imageOverlay('north.jpg', [[0, 0], [1200, 1400]]).addTo(map);
+
+    // Add the SOUTH map directly below it
+    L.imageOverlay('south.jpg', [[1200, 0], [2400, 1400]]).addTo(map);
+
+    map.fitBounds(bounds);
+
+    // Example clickable marker #1
+    const marker1 = L.circleMarker([700, 700], {
+      radius: 8,
+      color: '#ff4d4d',
+      fillColor: '#ff0000',
+      fillOpacity: 1,
+      weight: 2
+    }).addTo(map);
+
+    marker1.bindPopup(`
+      <div class="custom-popup">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Manila_Cathedraljf1449_27.JPG/640px-Manila_Cathedraljf1449_27.JPG">
+        <strong>Sample Historical Location</strong><br>
+        You can replace this image and text.
+      </div>
+    `);
+
+    // Example clickable marker #2
+    const marker2 = L.circleMarker([1700, 900], {
+      radius: 8,
+      color: '#ff4d4d',
+      fillColor: '#ff0000',
+      fillOpacity: 1,
+      weight: 2
+    }).addTo(map);
+
+    marker2.bindPopup(`
+      <div class="custom-popup">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Escolta_Street%2C_Manila%2C_c._1940.jpg/640px-Escolta_Street%2C_Manila%2C_c._1940.jpg">
+        <strong>Another Point of Interest</strong><br>
+        Add historical descriptions here.
+      </div>
+    `);
+
+    // Optional coordinate debugging
+    map.on('click', function(e) {
+      console.log('Clicked at:', e.latlng);
+    });
+  </script>
+
+</body>
+</html>
