@@ -125,10 +125,8 @@
     const bounds = [[0, 0], [imageHeight, imageWidth]];
 
     // Add the NORTH map
-    L.imageOverlay('north.jpg', [[0, 0], [1200, 1400]]).addTo(map);
-
-    // Add the SOUTH map directly below it
-    L.imageOverlay('south.jpg', [[1200, 0], [2400, 1400]]).addTo(map);
+  L.imageOverlay('./north.jpg', [[0, 0], [1200, 1400]]).addTo(map);
+  L.imageOverlay('./south.jpg', [[1200, 0], [2400, 1400]]).addTo(map);
 
     map.fitBounds(bounds);
 
