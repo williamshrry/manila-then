@@ -95,6 +95,8 @@ const map = L.map('map', {
   maxZoom: 4
 });
 
+let hoverCone = null;
+
 const bounds = [[0,0],[2400,1400]];
 
 // SOUTH (bottom)
@@ -118,6 +120,41 @@ map.on('mousemove', function(e){
 const modal = document.getElementById("imgModal");
 const modalImg = document.getElementById("modalImg");
 
+function showCone(latlng) {
+
+  // remove old cone if exists
+  if (hoverCone) {
+    map.removeLayer(hoverCone);
+  }
+
+  // cone size + direction
+  const angle = 45; // spread of flashlight
+  const distance = 200; // how far it reaches
+
+  // fake direction (you can adjust per photo later)
+  const base = latlng;
+  const left = [latlng.lat + distance, latlng.lng - angle];
+  const right = [latlng.lat + distance, latlng.lng + angle];
+
+  hoverCone = L.polygon([
+    base,
+    left,
+    right
+  ], {
+    color: "yellow",
+    fillColor: "yellow",
+    fillOpacity: 0.2,
+    weight: 1
+  }).addTo(map);
+}
+
+function hideCone() {
+  if (hoverCone) {
+    map.removeLayer(hoverCone);
+    hoverCone = null;
+  }
+}
+
 function openImage(src){
   modal.style.display = "flex";
   modalImg.src = src;
@@ -131,13 +168,22 @@ modal.addEventListener("click", function(){
 // ---------------- PINS ----------------
 
 // Pin 1
-L.circleMarker([611, 1374], {
+const marker = L.circleMarker([500, 700], {
   radius: 7,
   color: "red",
   fillColor: "red",
   fillOpacity: 1
-}).addTo(map)
-.on('click', () => {
+}).addTo(map);
+
+marker.on('mouseover', function (e) {
+  showCone(e.latlng);
+});
+
+marker.on('mouseout', function () {
+  hideCone();
+});
+
+marker.on('click', function () {
   openImage("images/250-solanost.jpg");
 });
 
