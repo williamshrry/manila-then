@@ -130,6 +130,36 @@
 
     map.fitBounds(bounds);
 
+        // coordinates
+
+  const coordDisplay = document.createElement('div');
+
+  coordDisplay.style.position = 'absolute';
+  coordDisplay.style.bottom = '20px';
+  coordDisplay.style.left = '20px';
+  coordDisplay.style.zIndex = '1000';
+  coordDisplay.style.background = 'rgba(0,0,0,0.75)';
+  coordDisplay.style.color = 'white';
+  coordDisplay.style.padding = '10px 14px';
+  coordDisplay.style.borderRadius = '10px';
+  coordDisplay.style.fontFamily = 'Arial';
+  coordDisplay.style.fontSize = '14px';
+  coordDisplay.style.backdropFilter = 'blur(10px)';
+  
+  coordDisplay.innerHTML = 'X: 0 | Y: 0';
+  
+  document.body.appendChild(coordDisplay);
+  
+  // Update coordinates while moving mouse
+  map.on('mousemove', function(e) {
+  
+    const x = Math.round(e.latlng.lng);
+    const y = Math.round(e.latlng.lat);
+  
+    coordDisplay.innerHTML = `X: ${x} | Y: ${y}`;
+  });
+
+
     // Example clickable marker #1
     const marker1 = L.circleMarker([700, 700], {
       radius: 8,
@@ -168,35 +198,6 @@
     map.on('click', function(e) {
       console.log('Clicked at:', e.latlng);
     });
-
-    // coordinates
-
-  const coordDisplay = document.createElement('div');
-
-  coordDisplay.style.position = 'absolute';
-  coordDisplay.style.bottom = '20px';
-  coordDisplay.style.left = '20px';
-  coordDisplay.style.zIndex = '1000';
-  coordDisplay.style.background = 'rgba(0,0,0,0.75)';
-  coordDisplay.style.color = 'white';
-  coordDisplay.style.padding = '10px 14px';
-  coordDisplay.style.borderRadius = '10px';
-  coordDisplay.style.fontFamily = 'Arial';
-  coordDisplay.style.fontSize = '14px';
-  coordDisplay.style.backdropFilter = 'blur(10px)';
-  
-  coordDisplay.innerHTML = 'X: 0 | Y: 0';
-  
-  document.body.appendChild(coordDisplay);
-  
-  // Update coordinates while moving mouse
-  map.on('mousemove', function(e) {
-  
-    const x = Math.round(e.latlng.lng);
-    const y = Math.round(e.latlng.lat);
-  
-    coordDisplay.innerHTML = `X: ${x} | Y: ${y}`;
-  });
 
   </script>
 
