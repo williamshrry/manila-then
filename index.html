@@ -1,208 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Manila Historical Map</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Interactive Historical Map</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #111;
+  }
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      overflow: hidden;
-    }
+  #map {
+    width: 100vw;
+    height: 100vh;
+  }
 
-    #map {
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-    }
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 13px;
+  }
 
-    .leaflet-container {
-      background: #1a1a1a;
-    }
+  /* Coordinate box */
+  #coords {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 10px 12px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 13px;
+  }
 
-    .custom-popup {
-      text-align: center;
-    }
-
-    .custom-popup img {
-      width: 250px;
-      border-radius: 10px;
-      display: block;
-      margin-bottom: 10px;
-    }
-
-    .title-bar {
-      position: absolute;
-      top: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      background: rgba(0,0,0,0.75);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 14px;
-      backdrop-filter: blur(10px);
-      letter-spacing: 1px;
-      font-size: 14px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    }
-
-    .legend {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      z-index: 1000;
-      background: rgba(0,0,0,0.75);
-      color: white;
-      padding: 14px;
-      border-radius: 12px;
-      width: 220px;
-      line-height: 1.5;
-      backdrop-filter: blur(10px);
-    }
-
-    .legend h3 {
-      margin-bottom: 8px;
-      font-size: 15px;
-    }
-
-    .legend p {
-      font-size: 13px;
-      opacity: 0.85;
-    }
-
-    .marker-label {
-      color: white;
-      font-size: 12px;
-      font-weight: bold;
-      text-shadow: 0 0 6px black;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="title-bar">
-    Interactive Historical Map of Manila
-  </div>
-
-  <div id="map"></div>
-
-  <div class="legend">
-    <h3>Controls</h3>
-    <p>• Scroll to zoom in/out</p>
-    <p>• Drag to pan around the map</p>
-    <p>• Click the red markers to open image popups</p>
-
-    <div id="imgModal" style="
+  /* Modal */
+  #imgModal {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     width: 100vw;
     height: 100vh;
     background: rgba(0,0,0,0.85);
     justify-content: center;
     align-items: center;
-    z-index: 99999;
-  ">
-    <img id="modalImg" style="
-      max-width: 80%;
-      max-height: 80%;
-      border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    ">
+    z-index: 10000;
+  }
 
-  </div>
+  #imgModal img {
+    max-width: 80%;
+    max-height: 80%;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+</style>
+</head>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<body>
 
-  <script>
-    // Create map using a simple coordinate system
-    const map = L.map('map', {
-      crs: L.CRS.Simple,
-      minZoom: -2,
-      maxZoom: 4,
-      zoomSnap: 0.1,
-    });
+<div id="map"></div>
 
-    const modal = document.getElementById("imgModal");
-    const modalImg = document.getElementById("modalImg");
-    
-    function openImage(src) {
-      modal.style.display = "flex";
-      modalImg.src = src;
-    }
-    
-    modal.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
+<div class="legend">
+  <b>Controls</b><br>
+  • Scroll = Zoom<br>
+  • Drag = Pan<br>
+  • Click pins = Open image
+</div>
 
-    // Dimensions of combined map canvas
-    const imageWidth = 2800;
-    const imageHeight = 2400;
+<div id="coords">X: 0 | Y: 0</div>
 
-    const bounds = [[0, 0], [imageHeight, imageWidth]];
+<!-- FULL SCREEN IMAGE MODAL -->
+<div id="imgModal">
+  <img id="modalImg">
+</div>
 
-    // Add the NORTH map
-  L.imageOverlay('./south.jpg', [[0, 0], [1200, 1400]]).addTo(map);
-  L.imageOverlay('./north.jpg', [[1200, 0], [2400, 1400]]).addTo(map);
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    map.fitBounds(bounds);
+<script>
+// ---------------- MAP SETUP ----------------
+const map = L.map('map', {
+  crs: L.CRS.Simple,
+  minZoom: -2,
+  maxZoom: 4
+});
 
-        // coordinates
+const bounds = [[0,0],[2400,1400]];
 
-  const coordDisplay = document.createElement('div');
+// SOUTH (bottom)
+L.imageOverlay('./south.jpg', [[0,0],[1200,1400]]).addTo(map);
 
-  coordDisplay.style.position = 'absolute';
-  coordDisplay.style.bottom = '20px';
-  coordDisplay.style.left = '20px';
-  coordDisplay.style.zIndex = '1000';
-  coordDisplay.style.background = 'rgba(0,0,0,0.75)';
-  coordDisplay.style.color = 'white';
-  coordDisplay.style.padding = '10px 14px';
-  coordDisplay.style.borderRadius = '10px';
-  coordDisplay.style.fontFamily = 'Arial';
-  coordDisplay.style.fontSize = '14px';
-  coordDisplay.style.backdropFilter = 'blur(10px)';
-  
-  coordDisplay.innerHTML = 'X: 0 | Y: 0';
-  
-  document.body.appendChild(coordDisplay);
-  
-  // Update coordinates while moving mouse
-  map.on('mousemove', function(e) {
-  
-    const x = Math.round(e.latlng.lng);
-    const y = Math.round(e.latlng.lat);
-  
-    coordDisplay.innerHTML = `X: ${x} | Y: ${y}`;
-  });
+// NORTH (top)
+L.imageOverlay('./north.jpg', [[1200,0],[2400,1400]]).addTo(map);
 
+map.fitBounds(bounds);
 
-    // Example clickable marker #1
-    const marker = L.circleMarker([700, 700], {
-    radius: 8,
-    color: '#ff4d4d'
-  }).addTo(map);
+// ---------------- COORDINATES ----------------
+const coordBox = document.getElementById("coords");
 
-  marker.on('click', function () {
-    openImage("images/250-solanost.jpg");
-  });
+map.on('mousemove', function(e){
+  coordBox.innerHTML =
+    "X: " + Math.round(e.latlng.lng) +
+    " | Y: " + Math.round(e.latlng.lat);
+});
 
-  </script>
+// ---------------- MODAL ----------------
+const modal = document.getElementById("imgModal");
+const modalImg = document.getElementById("modalImg");
+
+function openImage(src){
+  modal.style.display = "flex";
+  modalImg.src = src;
+}
+
+modal.addEventListener("click", function(){
+  modal.style.display = "none";
+  modalImg.src = "";
+});
+
+// ---------------- PINS ----------------
+
+// Pin 1
+L.circleMarker([500, 700], {
+  radius: 7,
+  color: "red",
+  fillColor: "red",
+  fillOpacity: 1
+}).addTo(map)
+.on('click', () => {
+  openImage("images/intramuros.jpg");
+});
+
+// Pin 2
+L.circleMarker([1500, 900], {
+  radius: 7,
+  color: "red",
+  fillColor: "red",
+  fillOpacity: 1
+}).addTo(map)
+.on('click', () => {
+  openImage("images/escolta.jpg");
+});
+
+</script>
 
 </body>
 </html>
