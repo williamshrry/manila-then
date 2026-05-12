@@ -1,228 +1,53 @@
+<!-- =========================
+FILE: index.html
+========================= -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Interactive Photo Map</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manila Orbital Viewer</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="style.css" />
 
-<style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial;
-  background: #111;
-}
-
-#map {
-  width: 100vw;
-  height: 100vh;
-}
-
-#coords {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: rgba(0,0,0,0.75);
-  color: white;
-  padding: 10px;
-  border-radius: 10px;
-  z-index: 9999;
-  font-size: 13px;
-}
-
-.legend {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(0,0,0,0.75);
-  color: white;
-  padding: 12px;
-  border-radius: 10px;
-  z-index: 9999;
-  font-size: 13px;
-}
-
-#imgModal {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.85);
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-#imgModal img {
-  max-width: 80%;
-  max-height: 80%;
-  border-radius: 10px;
-}
-</style>
+  <!-- Panzoom -->
+  <script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
 </head>
 
 <body>
 
-<div id="map"></div>
-<div id="coords">X: 0 | Y: 0</div>
+  <!-- MAIN VIEWER -->
+  <div id="viewer-container">
 
-<div class="legend">
-<b>Controls</b><br>
-Hover = cone view<br>
-Click = open photo
-</div>
+    <button class="nav-btn left" id="prevBtn">&#10094;</button>
 
-<div id="imgModal">
-  <img id="modalImg">
-</div>
+    <div id="image-wrapper">
+      <img id="main-image" src="images/img1.jpg" draggable="false"/>
+    </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <button class="nav-btn right" id="nextBtn">&#10095;</button>
 
-<script>
+  </div>
 
-// ---------------- MAP ----------------
-const map = L.map('map', {
-  crs: L.CRS.Simple,
-  minZoom: -2,
-  maxZoom: 4
-});
+  <!-- ORBIT MAP -->
+  <div id="orbit-panel">
 
-const bounds = [[0,0],[2400,1400]];
+    <div id="orbit-header">
+      ORBIT MAP
+    </div>
 
-L.imageOverlay('./south.jpg', [[0,0],[1200,1400]]).addTo(map);
-L.imageOverlay('./north.jpg', [[1200,0],[2400,1400]]).addTo(map);
+    <div id="map-container">
 
-map.fitBounds(bounds);
+      <img id="topview" src="images/topview.jpg" draggable="false"/>
 
-// ---------------- COORDINATES ----------------
-const coordBox = document.getElementById("coords");
+      <div id="node-layer"></div>
 
-map.on('mousemove', e => {
-  coordBox.innerHTML =
-    "X: " + Math.round(e.latlng.lng) +
-    " | Y: " + Math.round(e.latlng.lat);
-});
+    </div>
 
-// ---------------- MODAL ----------------
-const modal = document.getElementById("imgModal");
-const modalImg = document.getElementById("modalImg");
+  </div>
 
-function openImage(src){
-  modal.style.display = "flex";
-  modalImg.src = src;
-}
-
-modal.addEventListener("click", () => {
-  modal.style.display = "none";
-});
-
-// ---------------- DATA ----------------
-const photos = [
-  {
-    image: "images/250-solanost.jpg",
-    coords: [1373, 611],
-    rotation: 15,
-    range: 5,
-    angle: 10
-  },
-  {
-    image: "images/astor-stacruz.jpg",
-    coords: [1450, 518],
-    rotation: -15,
-    range: 5,
-    angle: 15
-  },
-   {
-    image: "images/theater-rizalave.jpg",
-    coords: [1466, 532],
-    rotation: -85,
-    range: 5,
-    angle: 15
-  },
-  {
-    image: "images/1437-rizalave.jpg",
-    coords: [1580, 540],
-    rotation: -85,
-    range: 5,
-    angle: 15
-  },
-  {
-    image: "images/cbau-azcarraga.jpg",
-    coords: [1474, 594],
-    rotation: 60,
-    range: 5,
-    angle: 15
-  }
-];
-
-// ---------------- CONE SYSTEM ----------------
-let activeCone = null;
-
-function showCone(latlng, rotation, range, angle) {
-
-  if (activeCone) map.removeLayer(activeCone);
-
-  const rad = rotation * Math.PI / 180;
-  const halfAngle = (angle / 2) * Math.PI / 180;
-
-  const base = latlng;
-
-  const left = [
-    latlng.lat + Math.cos(rad - halfAngle) * range,
-    latlng.lng + Math.sin(rad - halfAngle) * range
-  ];
-
-  const right = [
-    latlng.lat + Math.cos(rad + halfAngle) * range,
-    latlng.lng + Math.sin(rad + halfAngle) * range
-  ];
-
-  activeCone = L.polygon([base, left, right], {
-    color: "yellow",
-    fillColor: "yellow",
-    fillOpacity: 0.2,
-    weight: 1
-  }).addTo(map);
-}
-
-function hideCone(){
-  if (activeCone){
-    map.removeLayer(activeCone);
-    activeCone = null;
-  }
-}
-
-// ---------------- GENERATE MARKERS ----------------
-photos.forEach(photo => {
-
-  const marker = L.circleMarker(photo.coords, {
-    radius: 7,
-    color: "red",
-    fillColor: "red",
-    fillOpacity: 1
-  }).addTo(map);
-
-  marker.on('mouseover', (e) => {
-    showCone(
-      e.latlng,
-      photo.rotation,
-      photo.range,
-      photo.angle
-    );
-  });
-
-  marker.on('mouseout', hideCone);
-
-  marker.on('click', () => {
-    openImage(photo.image);
-  });
-
-});
-
-</script>
+  <script src="script.js"></script>
 
 </body>
 </html>
